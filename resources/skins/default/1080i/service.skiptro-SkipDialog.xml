@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window type="dialog">
+    <defaultcontrol always="true">101</defaultcontrol>
+    <controls>
+        <!-- Skip Intro Button -->
+        <control type="button" id="101">
+            <right>40</right>
+            <bottom>120</bottom>
+            <width>280</width>
+            <height>50</height>
+            <label>$ADDON[service.skiptro 32010]</label>
+            <font>font13_title</font>
+            <align>center</align>
+            <textcolor>FFFFFFFF</textcolor>
+            <focusedcolor>FFFFFFFF</focusedcolor>
+            <texturefocus colordiffuse="FF3399FF" border="4">white.png</texturefocus>
+            <texturenofocus colordiffuse="99000000" border="2">white.png</texturenofocus>
+        </control>
+
+        <!-- Skip Credits Button -->
+        <control type="button" id="102">
+            <right>40</right>
+            <bottom>120</bottom>
+            <width>280</width>
+            <height>50</height>
+            <label>$ADDON[service.skiptro 32011]</label>
+            <font>font13_title</font>
+            <align>center</align>
+            <textcolor>FFFFFFFF</textcolor>
+            <focusedcolor>FFFFFFFF</focusedcolor>
+            <texturefocus colordiffuse="FF3399FF" border="4">white.png</texturefocus>
+            <texturenofocus colordiffuse="99000000" border="2">white.png</texturenofocus>
+            <ondown>103</ondown>
+        </control>
+
+        <!-- Skip to Stinger Button -->
+        <control type="button" id="103">
+            <right>40</right>
+            <bottom>60</bottom>
+            <width>280</width>
+            <height>50</height>
+            <label>$ADDON[service.skiptro 32012]</label>
+            <font>font13_title</font>
+            <align>center</align>
+            <textcolor>FFFFFFFF</textcolor>
+            <focusedcolor>FFFFFFFF</focusedcolor>
+            <texturefocus colordiffuse="FFFF8800" border="4">white.png</texturefocus>
+            <texturenofocus colordiffuse="99000000" border="2">white.png</texturenofocus>
+            <onup>102</onup>
+        </control>
+    </controls>
+</window>

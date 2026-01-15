@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="service.skiptro" name="Skiptro" version="0.1.0" provider-name="Skiptro">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0"/>
+    </requires>
+    <extension point="xbmc.service" library="service.py"/>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en_GB">Skip intro/credits button</summary>
+        <description lang="en_GB">Displays a skip button during intro and credits sequences. Reads timing data from .skiptro.json files next to video files.</description>
+        <news>v0.1.0
+- Initial release
+- Skip intro button during playback
+- Reads .skiptro.json files next to video files
+- Configurable auto-dismiss timeout</news>
+        <platform>all</platform>
+        <license>MIT</license>
+    </extension>
+</addon>
