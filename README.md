@@ -29,10 +29,43 @@ TV Show/Season 1/Episode 01.skiptro.json
 }
 ```
 
+## Window properties
+
+The add-on sets properties on the Home window that skins can use to show/hide elements:
+
+| Property | Set when |
+|----------|----------|
+| `Skiptro.HasData` | A `.skiptro.json` file was found for the current video |
+| `Skiptro.HasIntro` | The skip data contains intro timestamps |
+| `Skiptro.InIntro` | Playback is currently within the intro region |
+| `Skiptro.DialogVisible` | The skip dialog is currently on screen |
+| `Skiptro.Skipping` | The add-on has initiated a seek (set before seek, cleared when seek begins processing) |
+
+Use these in skin visibility conditions, e.g. `!String.IsEmpty(Window(Home).Property(Skiptro.InIntro))`.
+
+To hide skin elements during add-on initiated skips (e.g. seekbar, OSD overlays), combine `Skiptro.Skipping` with Kodi's built-in seek conditions as a visibility condition:
+
+```
+String.IsEmpty(Window(Home).Property(Skiptro.Skipping)) + !Player.HasPerformedSeek(2) + !Player.Caching
+```
+
+Elements using this condition stay hidden for the full seek duration, including post-seek buffering on network sources.
+
+## Skinning
+
+The skip dialog uses Kodi's `WindowXMLDialog`, so skins can provide their own version of the dialog XML. Place a file named `service.skiptro-SkipDialog.xml` in your skin's XML directory (e.g. `1080i/`) and it will be used instead of the add-on's built-in default.
+
+The dialog uses these control IDs:
+
+| ID | Purpose |
+|----|---------|
+| 101 | Skip Intro button |
+
 ## Settings
 
 | Setting | Default | Description |
 |---------|---------|-------------|
+| Automatically skip intros | Off | Skip intros without showing a dialog |
 | Auto-close timeout | 10 seconds | How long the skip button stays on screen before dismissing |
 
 ## Requirements

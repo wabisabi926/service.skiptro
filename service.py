@@ -19,6 +19,35 @@ def log(message, level=xbmc.LOGDEBUG):
     xbmc.log(f'[{ADDON_ID}] {message}', level)
 
 
+HOME = xbmcgui.Window(10000)
+PROP_PREFIX = 'Skiptro.'
+ALL_PROPERTIES = ('HasData', 'HasIntro', 'HasCredits', 'HasStinger',
+                  'InIntro', 'InCredits', 'DialogVisible', 'Skipping')
+
+
+def set_property(name, value='true'):
+    HOME.setProperty(PROP_PREFIX + name, value)
+
+
+def clear_property(name):
+    HOME.clearProperty(PROP_PREFIX + name)
+
+
+def clear_all_properties():
+    for name in ALL_PROPERTIES:
+        clear_property(name)
+
+
+_skiptro_seeking = False
+
+
+def seek_with_property(player, target):
+    global _skiptro_seeking
+    _skiptro_seeking = True
+    set_property('Skipping')
+    player.seekTime(target)
+
+
 class SkiptroDialog(xbmcgui.WindowXMLDialog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -101,21 +130,21 @@ class SkiptroDialog(xbmcgui.WindowXMLDialog):
         if controlId == 101 and self.skip_type == 'intro':
             if self.seek_target is not None:
                 log(f'Skipping intro, seeking to {self.seek_target}s')
-                player.seekTime(self.seek_target)
+                seek_with_property(player, self.seek_target)
 
         elif controlId == 102 and self.skip_type == 'credits':
             try:
                 total_time = player.getTotalTime()
                 seek_to = max(0, total_time - 2)
                 log(f'Skipping credits, seeking to {seek_to}s')
-                player.seekTime(seek_to)
+                seek_with_property(player, seek_to)
             except RuntimeError:
                 pass
 
         elif controlId == 103 and self.skip_type == 'credits':
             if self.stinger_target is not None:
                 log(f'Skipping to stinger at {self.stinger_target}s')
-                player.seekTime(self.stinger_target)
+                seek_with_property(player, self.stinger_target)
 
         self.close()
 
@@ -153,6 +182,12 @@ class SkiptroPlayer(xbmc.Player):
     def onAVStarted(self):
         self._load_skiptro_data()
 
+    def onPlayBackSeek(self, time, seekOffset):  # noqa: N802,ARG002
+        global _skiptro_seeking
+        if _skiptro_seeking:
+            _skiptro_seeking = False
+            clear_property('Skipping')
+
     def onPlayBackStopped(self):
         self._reset()
 
@@ -163,6 +198,7 @@ class SkiptroPlayer(xbmc.Player):
         log('Playback ended, resetting state')
         self.skiptro_data = None
         self.current_file = None
+        clear_all_properties()
 
     def _load_skiptro_data(self):
         folder = xbmc.getInfoLabel('Player.Folderpath')
@@ -181,6 +217,7 @@ class SkiptroPlayer(xbmc.Player):
         if not xbmcvfs.exists(skiptro_path):
             log('No skiptro file found')
             self.skiptro_data = None
+            clear_all_properties()
             return
 
         try:
@@ -188,12 +225,33 @@ class SkiptroPlayer(xbmc.Player):
                 self.skiptro_data = json.loads(f.read())
             log(f'Loaded skiptro data: {self.skiptro_data}')
             self._validate_skiptro_data()
+            self._update_data_properties()
         except json.JSONDecodeError as e:
             log(f'Invalid JSON in skiptro file: {e}', xbmc.LOGWARNING)
             self.skiptro_data = None
+            clear_all_properties()
         except Exception as e:
             log(f'Error reading skiptro file: {e}', xbmc.LOGWARNING)
             self.skiptro_data = None
+            clear_all_properties()
+
+    def _update_data_properties(self):
+        if not self.skiptro_data:
+            clear_all_properties()
+            return
+        set_property('HasData')
+        if 'intro' in self.skiptro_data:
+            set_property('HasIntro')
+        else:
+            clear_property('HasIntro')
+        if 'credits' in self.skiptro_data:
+            set_property('HasCredits')
+        else:
+            clear_property('HasCredits')
+        if 'stinger' in self.skiptro_data:
+            set_property('HasStinger')
+        else:
+            clear_property('HasStinger')
 
     def _validate_skiptro_data(self):
         if not self.skiptro_data:
@@ -255,6 +313,7 @@ class SkiptroService:
 
             self._check_skiptro_ranges(current_time)
 
+        clear_all_properties()
         log('Service stopped')
 
     def _check_skiptro_ranges(self, current_time):
@@ -278,11 +337,25 @@ class SkiptroService:
         self.prompted_ranges -= past_ranges
         self.active_ranges = currently_active
 
+        if 'intro' in currently_active:
+            set_property('InIntro')
+        else:
+            clear_property('InIntro')
+        if 'credits' in currently_active:
+            set_property('InCredits')
+        else:
+            clear_property('InCredits')
+
         for range_type in currently_active:
             if range_type not in self.prompted_ranges:
                 if range_type == 'intro':
                     end = intro.get('end', 0)
-                    self._show_dialog('intro', seek_target=end, window_end=end)
+                    if ADDON.getSettingBool('auto_skip_intro'):
+                        self.prompted_ranges.add('intro')
+                        log(f'Auto-skipping intro, seeking to {end}s')
+                        seek_with_property(self.player, end)
+                    else:
+                        self._show_dialog('intro', seek_target=end, window_end=end)
                 elif range_type == 'credits':
                     stinger = data.get('stinger')
                     stinger_target = stinger.get('start') if stinger else None
@@ -305,7 +378,9 @@ class SkiptroService:
         )
         dialog.set_skip_info(skip_type, seek_target, stinger_target,
                              autoclose_seconds, window_end)
+        set_property('DialogVisible')
         dialog.doModal()
+        clear_property('DialogVisible')
         del dialog
 
 
